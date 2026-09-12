@@ -170,9 +170,9 @@ function Panel({ children, style, className = "", ...rest }) {
       className={className}
       style={{
         background: T.panelSolid,
-        border: `1px solid ${T.border}`,
-        borderRadius: 10,
-        boxShadow: "0 1px 0 0 rgba(255,255,255,0.04) inset, 0 18px 34px -22px rgba(0,0,0,0.6)",
+        border: `1px solid ${T.borderSoft}`,
+        borderRadius: 14,
+        boxShadow: "0 14px 28px -22px rgba(0,0,0,0.55)",
         ...style,
       }}
       {...rest}
@@ -184,20 +184,20 @@ function Panel({ children, style, className = "", ...rest }) {
 
 function Badge({ children, tone = "neutral" }) {
   const map = {
-    neutral: { c: T.textDim, bg: "#1A2135", bd: T.border },
-    good: { c: T.good, bg: T.goodSoft, bd: T.good + "44" },
-    warn: { c: T.warn, bg: T.warnSoft, bd: T.warn + "44" },
-    bad: { c: T.bad, bg: T.badSoft, bd: T.bad + "44" },
-    accent: { c: T.accent2, bg: T.accentSoft, bd: T.accent + "44" },
+    neutral: { c: T.textDim, bg: "transparent", bd: "transparent" },
+    good: { c: T.good, bg: T.goodSoft, bd: "transparent" },
+    warn: { c: T.warn, bg: T.warnSoft, bd: "transparent" },
+    bad: { c: T.bad, bg: T.badSoft, bd: "transparent" },
+    accent: { c: T.accent2, bg: T.accentSoft, bd: "transparent" },
   };
   const s = map[tone] || map.neutral;
   return (
     <span
       style={{
         display: "inline-flex", alignItems: "center", gap: 4,
-        fontSize: 11.5, fontWeight: 600, padding: "3px 8px", borderRadius: 6,
+        fontSize: 11, fontWeight: 600, padding: tone === "neutral" ? "3px 0" : "3px 8px", borderRadius: 6,
         color: s.c, background: s.bg, border: `1px solid ${s.bd}`,
-        whiteSpace: "nowrap",
+        whiteSpace: "nowrap", letterSpacing: 0.1,
       }}
     >
       {children}
@@ -284,11 +284,11 @@ function EmptyState({ icon: Icon = Info, title, desc, action }) {
 
 function SectionHeader({ eyebrow, title, desc, right }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 12, marginBottom: 22 }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 14, marginBottom: 30 }}>
       <div>
-        {eyebrow && <div style={{ fontSize: 12.5, fontWeight: 600, color: T.accent2, marginBottom: 6 }}>{eyebrow}</div>}
-        <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 600, color: T.text, margin: 0 }}>{title}</h1>
-        {desc && <p style={{ color: T.textDim, fontSize: 14, marginTop: 6, maxWidth: 640 }}>{desc}</p>}
+        {eyebrow && <div style={{ fontSize: 11.5, fontWeight: 600, color: T.textFaint, marginBottom: 8, letterSpacing: 0.4 }}>{eyebrow}</div>}
+        <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 25, fontWeight: 600, color: T.text, margin: 0, letterSpacing: -0.3 }}>{title}</h1>
+        {desc && <p style={{ color: T.textDim, fontSize: 14, marginTop: 8, maxWidth: 620, lineHeight: 1.55 }}>{desc}</p>}
       </div>
       {right}
     </div>
@@ -813,7 +813,95 @@ function completeness(c) {
 /* =========================================================================
    AI SERVICE — real call to Anthropic API with business system prompt
    ========================================================================= */
-const SYSTEM_PROMPT = (company) => `Você é o Diretor de Marketing, Vendas, Growth e Estratégia Empresarial da plataforma GrowthOS AI.
+
+/* Repertório de frameworks consolidados de mercado. Isso não é "opinião" da
+   IA — é o conhecimento profissional comum a qualquer CMO/CRO sênior, que a
+   IA deve aplicar nomeando o framework usado, em vez de dar conselho
+   genérico solto. */
+const STRATEGY_PLAYBOOK = `
+REPERTÓRIO DE FRAMEWORKS A APLICAR (cite o framework pelo nome quando usar um):
+
+1. DIAGNÓSTICO E COMPETITIVIDADE
+   - SWOT para situar forças/fraquezas internas e oportunidades/ameaças externas.
+   - 5 Forças de Porter para avaliar intensidade competitiva e poder de barganha.
+   - Compare capacidade operacional real da empresa com o que o mercado exige antes de recomendar expansão.
+
+2. POSICIONAMENTO E MARCA
+   - Mapa de posicionamento (2 eixos relevantes para o ICP) para achar diferenciação real.
+   - Proposta de valor no formato Job-to-be-Done: "quando [situação], o cliente quer [motivação], para [resultado]".
+   - Só recomende reposicionamento quando houver gap claro entre percepção atual e desejada — nunca como resposta padrão para toda queda de receita.
+
+3. SEGMENTAÇÃO, ICP E PERSONAS
+   - STP (Segmentação, Targeting, Positioning).
+   - ICP com critérios firmográficos + comportamentais + sinais de intenção de compra, nunca apenas um adjetivo vago.
+
+4. GO-TO-MARKET E CANAIS
+   - Escolha de canal por fit com ciclo de vendas, ticket médio e complexidade da oferta (motion self-service vs. sales-led vs. product-led).
+   - Priorize canal por CAC estimado, tempo até resultado e dependência de terceiros.
+
+5. FUNIL, MÉTRICAS E UNIT ECONOMICS
+   - AARRR (Aquisição, Ativação, Retenção, Receita, Indicação) para localizar o gargalo real antes de recomendar mais investimento.
+   - Relação LTV:CAC (referência saudável próxima de 3:1) e payback de CAC como critério de decisão.
+   - Pense em termos de coorte, não de médias soltas, antes de recomendar "escalar".
+
+6. PRIORIZAÇÃO DE INICIATIVAS
+   - ICE (Impacto, Confiança, Facilidade) ou RICE (+ Alcance) para ordenar iniciativas de forma defensável.
+   - Nunca recomende "fazer tudo" — force uma ordem de prioridade com trade-off explícito.
+
+7. VENDAS CONSULTIVAS E COMPLEXAS
+   - SPIN Selling (Situação, Problema, Implicação, Necessidade de solução) para estruturar discovery.
+   - MEDDIC/MEDDPICC (Métricas, Comprador Econômico, Critérios de Decisão, Processo de Decisão, Dor, Campeão) para qualificar oportunidades B2B.
+   - Challenger Sale quando o ciclo de vendas exige ensinar algo novo ao cliente sobre o próprio problema.
+
+8. PRICING E OFERTA
+   - Precificação por valor percebido (não apenas custo+margem) quando a diferenciação sustenta isso.
+   - Sugira testar elasticidade/ancoragem antes de recomendar mudança de preço.
+
+9. EXPERIMENTAÇÃO (GROWTH)
+   - Toda hipótese precisa de variável testada, métrica primária, critério de sucesso E critério de interrupção definidos ANTES de rodar.
+   - Prefira o menor experimento que já responde à pergunta, antes de comprometer orçamento maior.
+
+10. METAS
+    - Traduza objetivos vagos ("crescer mais") em Objetivo + Key Results mensuráveis e datados (OKRs).
+
+Nomeie o framework que sustenta cada recomendação relevante (ex.: "pelo LTV:CAC atual...", "aplicando ICE, essa iniciativa fica em segundo lugar porque..."). Isso é o que diferencia uma resposta de diretor sênior de um conselho genérico.
+`.trim();
+
+/* Monta o bloco extra de contexto (memória empresarial) a partir do que já
+   está registrado na plataforma — decisões, métricas, tarefas e documentos.
+   Sem isso, a IA só enxergava o cadastro inicial da empresa. */
+function buildContextExtras(context) {
+  const { decisions = [], metrics = {}, documents = [], tasks = [] } = context || {};
+  const parts = [];
+
+  const hasMetrics = metrics && Object.values(metrics).some((v) => v && String(v).trim().length > 0);
+  if (hasMetrics) {
+    parts.push(`MÉTRICAS REGISTRADAS PELO USUÁRIO (dados reais informados manualmente — use exatamente estes, não invente outros):\n${JSON.stringify(metrics, null, 2)}`);
+  }
+
+  if (decisions && decisions.length > 0) {
+    const recent = decisions.slice(0, 8).map((d) => `- ${d.title} (impacto: ${d.impact}, confiança: ${d.confidence}, status: ${d.status})`).join("\n");
+    parts.push(`DECISÕES ESTRATÉGICAS JÁ TOMADAS (histórico real — dê continuidade e não contradiga sem justificar por quê):\n${recent}`);
+  }
+
+  const openTasks = (tasks || []).filter((t) => t.status !== "concluida").slice(0, 10);
+  if (openTasks.length > 0) {
+    const list = openTasks.map((t) => `- ${t.title} (prioridade: ${t.priority}, status: ${t.status})`).join("\n");
+    parts.push(`TAREFAS EM ABERTO:\n${list}`);
+  }
+
+  if (documents && documents.length > 0) {
+    const docs = documents.slice(0, 6).map((d) => {
+      const trecho = (d.conteudo || "").slice(0, 240);
+      return `- [${d.categoria}] ${d.titulo}: ${trecho}${(d.conteudo || "").length > 240 ? "…" : ""}`;
+    }).join("\n");
+    parts.push(`DOCUMENTOS E NOTAS CADASTRADOS PELA EMPRESA:\n${docs}`);
+  }
+
+  return parts.length ? "\n\n" + parts.join("\n\n") : "";
+}
+
+const SYSTEM_PROMPT = (company, context) => `Você é o Diretor de Marketing, Vendas, Growth e Estratégia Empresarial da plataforma GrowthOS AI — um profissional sênior com décadas equivalentes de repertório em diagnóstico de competitividade, reposicionamento de marca, go-to-market, sales enablement e estruturação de funis de geração de demanda.
 
 Sua missão é ajudar empresas a tomar decisões melhores para aumentar receita, lucro, margem, aquisição, conversão, retenção e crescimento sustentável.
 
@@ -821,16 +909,18 @@ Você atua como uma combinação de CMO, CRO, CGO, Diretor Comercial, estrategis
 
 Você NÃO deve agir como um chatbot genérico. Antes de recomendar algo importante, considere objetivo, contexto empresarial, produto, público, ICP, mercado, concorrentes, oferta, preço, margem, CAC, LTV, funil, capacidade operacional, orçamento, riscos e dados disponíveis.
 
+${STRATEGY_PLAYBOOK}
+
 Sempre que possível, siga este processo: entender o objetivo, diagnosticar o cenário, identificar o gargalo, consultar dados relevantes, gerar alternativas, comparar alternativas, recomendar uma prioridade, propor plano de execução, definir métricas e critérios de sucesso/interrupção.
 
 Diferencie sempre: dado confirmado, evidência externa, benchmark, inferência, hipótese, estimativa e opinião estratégica. NUNCA invente estudos, estatísticas, preços, resultados ou fontes — se não tiver dados suficientes, diga isso claramente e ofereça uma hipótese provisória rotulada como tal.
 
-Não trate métricas de vaidade como sucesso. Priorize impacto financeiro, eficiência, qualidade dos clientes, margem e sustentabilidade. Seja crítico: se uma ideia for ruim, explique por quê e ofereça alternativa.
+Não trate métricas de vaidade como sucesso. Priorize impacto financeiro, eficiência, qualidade dos clientes, margem e sustentabilidade. Seja crítico: se uma ideia for ruim, explique por quê e ofereça alternativa — nunca concorde automaticamente só para agradar.
 
-Use Markdown com títulos curtos, listas e negrito com moderação. Seja direto e específico ao contexto da empresa abaixo — nunca genérico.
+Use Markdown com títulos curtos, listas e negrito com moderação. Seja direto, denso em conteúdo útil e específico ao contexto da empresa abaixo — nunca genérico, nunca enrolado.
 
 CONTEXTO DA EMPRESA (dados fornecidos pelo usuário; não invente o que estiver faltando):
-${JSON.stringify(company, null, 2)}`;
+${JSON.stringify(company, null, 2)}${buildContextExtras(context)}`;
 
 /* Versão web: o navegador NUNCA chama api.anthropic.com diretamente (isso
    exporia a chave de API a qualquer visitante do site). Em vez disso, ele
@@ -849,12 +939,12 @@ async function callBackendChat(system, messages) {
   return data.text || "Não consegui gerar uma resposta agora. Tente novamente.";
 }
 
-async function callDirectorAI(company, messages) {
-  return callBackendChat(SYSTEM_PROMPT(company), messages);
+async function callDirectorAI(company, messages, context) {
+  return callBackendChat(SYSTEM_PROMPT(company, context), messages);
 }
 
-async function callStructuredDiagnosis(company) {
-  const prompt = `Com base no contexto de empresa fornecido, gere um diagnóstico estratégico.
+async function callStructuredDiagnosis(company, context) {
+  const prompt = `Com base no contexto de empresa fornecido (incluindo decisões, métricas e documentos já registrados, se houver), gere um diagnóstico estratégico aplicando o repertório de frameworks descrito nas suas instruções (cite o framework usado em cada recomendação, quando fizer sentido).
 Responda APENAS com um JSON válido (sem markdown, sem crases, sem texto antes ou depois), no formato:
 {
   "summary": "resumo executivo em 2-3 frases",
@@ -869,7 +959,7 @@ Responda APENAS com um JSON válido (sem markdown, sem crases, sem texto antes o
 }
 Se faltarem dados no contexto para alguma seção, diga isso dentro do próprio texto da seção (ex.: "Dados insuficientes para avaliar X") em vez de inventar. Baseie-se apenas no contexto fornecido, sem inventar estatísticas externas.`;
   const text = await callBackendChat(
-    SYSTEM_PROMPT(company) + "\n\nResponda somente com JSON puro, sem texto adicional.",
+    SYSTEM_PROMPT(company, context) + "\n\nResponda somente com JSON puro, sem texto adicional.",
     [{ role: "user", content: prompt }]
   );
   const clean = text.replace(/```json|```/g, "").trim();
@@ -925,8 +1015,8 @@ function Sidebar({ current, setCurrent, collapsed, setCollapsed, user, onLogout,
               style={{
                 width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", marginBottom: 2,
                 borderRadius: 7, border: "none", cursor: "pointer", textAlign: "left",
-                background: active ? T.accentSoft : "transparent", color: active ? T.accent2 : T.textDim,
-                fontSize: 13.3, fontWeight: active ? 600 : 500,
+                background: active ? T.accentSoft : "transparent", color: active ? T.text : T.textDim,
+                fontSize: 13.3, fontWeight: active ? 600 : 500, borderLeft: active ? `2px solid ${T.accent}` : "2px solid transparent",
               }}
             >
               <n.icon size={16} style={{ flexShrink: 0 }} />
@@ -1256,7 +1346,7 @@ function MeuNegocio({ company, setCompany, saveCompany }) {
 /* =========================================================================
    DIRETOR IA — chat
    ========================================================================= */
-function DiretorIA({ company, conversations, setConversations, activeConvId, setActiveConvId, addTask, addDecision }) {
+function DiretorIA({ company, conversations, setConversations, activeConvId, setActiveConvId, addTask, addDecision, context }) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -1301,7 +1391,7 @@ function DiretorIA({ company, conversations, setConversations, activeConvId, set
     setInput("");
     setLoading(true);
     try {
-      const reply = await callDirectorAI(company, updatedMessages);
+      const reply = await callDirectorAI(company, updatedMessages, context);
       const aiMsg = { role: "assistant", content: reply, id: uid() };
       setConversations((prev) => prev.map((c) => (c.id === convId ? { ...c, messages: [...updatedMessages, aiMsg] } : c)));
     } catch (e) {
@@ -1404,7 +1494,7 @@ function DiretorIA({ company, conversations, setConversations, activeConvId, set
 /* =========================================================================
    ESTRATÉGIA
    ========================================================================= */
-function Estrategia({ company, diagnosis, setDiagnosis, addTask, addDecision }) {
+function Estrategia({ company, diagnosis, setDiagnosis, addTask, addDecision, context }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -1412,7 +1502,7 @@ function Estrategia({ company, diagnosis, setDiagnosis, addTask, addDecision }) 
     setLoading(true);
     setError("");
     try {
-      const d = await callStructuredDiagnosis(company);
+      const d = await callStructuredDiagnosis(company, context);
       setDiagnosis(d);
     } catch (e) {
       setError(e.message);
@@ -1870,14 +1960,14 @@ function AIResultPanel({ result, onClear }) {
   );
 }
 
-function MarketingModule({ company }) {
+function MarketingModule({ company, context }) {
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState("");
   const run = async (key, prompt) => {
     setLoading(key);
     setResult("");
     try {
-      const r = await callDirectorAI(company, [{ role: "user", content: prompt }]);
+      const r = await callDirectorAI(company, [{ role: "user", content: prompt }], context);
       setResult(r);
     } catch (e) {
       setResult("Erro: " + e.message);
@@ -1904,12 +1994,12 @@ function MarketingModule({ company }) {
   );
 }
 
-function VendasModule({ company }) {
+function VendasModule({ company, context }) {
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState("");
   const run = async (key, prompt) => {
     setLoading(key); setResult("");
-    try { setResult(await callDirectorAI(company, [{ role: "user", content: prompt }])); }
+    try { setResult(await callDirectorAI(company, [{ role: "user", content: prompt }], context)); }
     catch (e) { setResult("Erro: " + e.message); }
     finally { setLoading(""); }
   };
@@ -1935,7 +2025,7 @@ function VendasModule({ company }) {
   );
 }
 
-function MercadoModule({ company }) {
+function MercadoModule({ company, context }) {
   const [query, setQuery] = useState("");
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
@@ -1943,7 +2033,7 @@ function MercadoModule({ company }) {
     if (!query.trim()) return;
     setLoading(true); setResult("");
     try {
-      const r = await callDirectorAI(company, [{ role: "user", content: `Pesquisa de mercado solicitada: "${query}". Responda com o que você sabe do seu conhecimento geral, deixando claro que não há acesso a busca ao vivo nesta versão, separando fatos amplamente conhecidos de estimativas, e evitando inventar estatísticas específicas sem fonte.` }]);
+      const r = await callDirectorAI(company, [{ role: "user", content: `Pesquisa de mercado solicitada: "${query}". Responda com o que você sabe do seu conhecimento geral, deixando claro que não há acesso a busca ao vivo nesta versão, separando fatos amplamente conhecidos de estimativas, e evitando inventar estatísticas específicas sem fonte.` }], context);
       setResult(r);
     } catch (e) { setResult("Erro: " + e.message); }
     finally { setLoading(false); }
@@ -2159,6 +2249,10 @@ export default function GrowthOSApp() {
     return <Onboarding company={company} setCompany={setCompany} onFinish={finishOnboarding} />;
   }
 
+  // Memória empresarial que alimenta o Diretor IA além do cadastro inicial:
+  // decisões já tomadas, métricas reais, tarefas em aberto e documentos.
+  const aiContext = { decisions, metrics, tasks, documents };
+
   // Authenticated app
   return (
     <div style={{ display: "flex", background: T.bg, color: T.text, fontFamily: FONT_BODY, minHeight: "100vh" }}>
@@ -2166,7 +2260,7 @@ export default function GrowthOSApp() {
       <Sidebar current={view} setCurrent={setView} collapsed={collapsed} setCollapsed={setCollapsed} user={user} onLogout={logout} companyName={company.info.nome} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <Topbar user={user} companyName={company.info.nome} onAskDirector={() => setView("diretor")} />
-        <div style={{ padding: 24, maxWidth: view === "diretor" ? "none" : 1180 }}>
+        <div style={{ padding: "32px 36px", maxWidth: view === "diretor" ? "none" : 1180 }}>
           {view === "dashboard" && <Dashboard company={company} metrics={metrics} tasks={tasks} decisions={decisions} setView={setView} diagnosis={diagnosis} />}
           {view === "negocio" && <MeuNegocio company={company} setCompany={setCompany} saveCompany={() => store.set("company", company)} />}
           {view === "diretor" && (
@@ -2178,12 +2272,13 @@ export default function GrowthOSApp() {
               setActiveConvId={setActiveConvId}
               addTask={addTask}
               addDecision={addDecision}
+              context={aiContext}
             />
           )}
-          {view === "estrategia" && <Estrategia company={company} diagnosis={diagnosis} setDiagnosis={setDiagnosis} addTask={addTask} addDecision={addDecision} />}
-          {view === "marketing" && <MarketingModule company={company} />}
-          {view === "vendas" && <VendasModule company={company} />}
-          {view === "mercado" && <MercadoModule company={company} />}
+          {view === "estrategia" && <Estrategia company={company} diagnosis={diagnosis} setDiagnosis={setDiagnosis} addTask={addTask} addDecision={addDecision} context={aiContext} />}
+          {view === "marketing" && <MarketingModule company={company} context={aiContext} />}
+          {view === "vendas" && <VendasModule company={company} context={aiContext} />}
+          {view === "mercado" && <MercadoModule company={company} context={aiContext} />}
           {view === "concorrentes" && <Concorrentes items={competitors} setItems={setCompetitors} />}
           {view === "campanhas" && <Campanhas items={campaigns} setItems={setCampaigns} />}
           {view === "experimentos" && <Experimentos items={experiments} setItems={setExperiments} />}
